@@ -2,10 +2,40 @@
 #include "ResourceManager.h"
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Sprite.hpp>
+#include <SFML/Window/Mouse.hpp>
 #include <cmath>
+#include <iostream>
+#include "Constants.h"
 
 Player::Player()
 {
+}
+
+sf::Vector2f Player::getShootDirection() const
+{
+    // Shoot to the right
+    return sf::Vector2f(1.0f, 0.0f);
+}
+
+void Player::shoot(float dt)
+{
+    if (m_shootCooldown > 0.0f)
+        m_shootCooldown -= dt;
+        
+    if (m_shootCooldown <= 0.0f)
+    {
+        sf::Vector2f direction = getShootDirection();
+        float projectileSpeed = 600.0f; // Pixels per second
+        
+        m_projectileRequest.position = m_position;
+        m_projectileRequest.velocity = direction * projectileSpeed;
+        m_hasProjectileRequest = true;
+        
+        std::cout << "SHOOT! Position: (" << m_position.x << ", " << m_position.y 
+                  << ") Direction: (" << direction.x << ", " << direction.y << ")" << std::endl;
+        
+        m_shootCooldown = m_attackSpeed;
+    }
 }
 
 bool Player::init()
@@ -32,16 +62,20 @@ void Player::update(float dt)
 {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space))
     {
+        if (m_position.y >= GroundLevel)
         m_isJumping = true;
     }
 
-    if (m_position.y < 600)
+    if (m_position.y < GroundLevel - 100)
         m_isJumping = false;
 
     if (m_isJumping)
         m_position.y -= 200 * dt;
-    else if (!m_isJumping && m_position.y < 800)
+    else if (!m_isJumping && m_position.y < GroundLevel)
         m_position.y += 200 * dt;
+
+    if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
+        shoot(dt);
 }
 
 void Player::render(sf::RenderTarget& target) const

@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <cassert>
+#include <iostream>
 
 class StateStack
 {
@@ -11,6 +12,7 @@ public:
     template<typename T>
     bool push()
     {
+        std::cout << "Pushing state: " << typeid(T).name() << std::endl;
         std::unique_ptr<IState> pState = std::make_unique<T>(*this);
         bool ok = pState && pState->init();
         if (ok) m_states.push_back(std::move(pState));

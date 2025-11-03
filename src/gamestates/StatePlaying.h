@@ -3,6 +3,7 @@
 #include "IState.h"
 #include "entities/Player.h"
 #include "entities/Enemy.h"
+#include "entities/Projectile.h"
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/Graphics/Text.hpp>
@@ -24,7 +25,9 @@ private:
 
     StateStack& m_stateStack;
     std::unique_ptr<Player> m_pPlayer;
+    std::unique_ptr<ParticleWorld> m_pParticleWorld;
     std::vector<std::unique_ptr<Enemy>> m_enemies;
+    std::vector<std::unique_ptr<Projectile>> m_projectiles;
     sf::RectangleShape m_ground;
     bool m_hasPauseKeyBeenReleased = true;
 

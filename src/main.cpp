@@ -8,6 +8,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/System/Time.hpp>
+#include "Constants.h"
 
 int main(int argc, char* argv[])
 {
@@ -16,8 +17,8 @@ int main(int argc, char* argv[])
     // ResourceManager must be instantiated here -- DO NOT CHANGE
     ResourceManager::init(argv[0]);
 
-    sf::RenderWindow window(sf::VideoMode({1024, 1024}), "Runner");
-    window.setKeyRepeatEnabled(false);
+    sf::RenderWindow window(sf::VideoMode({WindowWidth, WindowHeight}), "Runner");
+    // window.setKeyRepeatEnabled(false);
 
     StateStack gamestates;
     if (!gamestates.push<StateMenu>())
@@ -34,13 +35,13 @@ int main(int argc, char* argv[])
         while (const std::optional event = window.pollEvent())
         {
             if (event->is<sf::Event::Closed>())
-            {
-                return 0;
-            }
+                window.close();;
         }
+        // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape))
+        //     window.close();
 
         pState->update(elapsedTime.asSeconds());
-        window.clear(sf::Color::Blue);
+        window.clear();
         pState->render(window);
         window.display();
 
