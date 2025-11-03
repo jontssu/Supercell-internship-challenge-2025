@@ -22,9 +22,15 @@ public:
     };
 
     Player();
-    virtual ~Player() = default;
-    
-    void setParticleWorld(ParticleWorld* pParticleWorld) { m_pParticleWorld = std::make_unique<ParticleWorld>(*pParticleWorld); }
+	virtual ~Player() = default;
+
+	void initPhysics();
+
+	void setParticleWorld(ParticleWorld* pParticleWorld) { m_pParticleWorld = std::make_unique<ParticleWorld>(*pParticleWorld); }
+
+    void setParticleWorldPointer(ParticleWorld* pParticleWorld) { m_pParticleWorldPtr = pParticleWorld; }
+
+    void setGameTime(float gameTime) { m_gameTime = gameTime; }
 
     ProjectileRequest getProjectileRequest() const { return m_projectileRequest; }
     const float getDamage() const { return m_damage; }
@@ -35,13 +41,15 @@ public:
     void shoot(float dt, int type);
 
     bool init() override;
-    void update(float dt) override;
-    void render(sf::RenderTarget& target) const override;
+	void updatePhysics(float dt);
+	void update(float dt) override;
+	void render(sf::RenderTarget& target) const override;
 
     bool m_isJumping = false;
 
 private:
     std::unique_ptr<ParticleWorld> m_pParticleWorld;
+    ParticleWorld* m_pParticleWorldPtr = nullptr;
     float m_shootCooldown = 0.0f;
     float m_attackSpeed = AttackSpeed;
     float m_damage = PlayerDamage;
@@ -49,6 +57,19 @@ private:
     ProjectileRequest m_projectileRequest;
     mutable sf::Vector2f m_mousePosition;
     sf::Vector2f m_velocity = {0.0f, 0.0f};
+    bool m_inWater = false;
+    float m_groundLevel = GroundLevel;
+    float m_gameTime = 0.0f;
+
+
+    //Physics
+    sf::Vector2f velocity;
+    float velocityMax;
+    float velocityMin;
+    float acceleration;
+    float drag;
+    float gravity;
+    float velocityMaxY;
 
     sf::Vector2f getShootDirection() const;
 };

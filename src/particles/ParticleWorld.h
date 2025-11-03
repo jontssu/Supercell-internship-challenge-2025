@@ -31,5 +31,8 @@ class ParticleWorld
 	  private:
 		std::vector<std::vector<Particle>>	particles;
 		int									frame_count = 0;
-		sf::Vector2f						gravity = {0.f, 1.f};
+		sf::Vector2f						gravity = {0.f, 1.f};  // Positive = downward
+		float								leftwardMoveTimer = 0.0f;
+		float								leftwardMoveInterval = 0.02f; // Move left every 0.02 seconds
+		bool								shouldMoveLeftThisFrame = false;
 };

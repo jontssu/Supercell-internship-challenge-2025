@@ -10,21 +10,17 @@
 
 bool Enemy::init()
 {
-    int enemyType = rand() % 7;
+    int enemyType = rand() % 2;
     if (enemyType == 0)
         m_type = ENEMY_TYPE_WATER;
-    else if (enemyType == 1)
-        m_type = ENEMY_TYPE_FIRE;
     else
-        m_type = ENEMY_TYPE_WALL;
+        m_type = ENEMY_TYPE_FIRE;
 
     const sf::Texture* pTexture = nullptr;
     if (m_type == ENEMY_TYPE_WATER)
         pTexture = ResourceManager::getOrLoadTexture("ice.png");
-    else if (m_type == ENEMY_TYPE_FIRE)
-        pTexture = ResourceManager::getOrLoadTexture("fire.png");
     else
-        pTexture = ResourceManager::getOrLoadTexture("enemy.png");
+        pTexture = ResourceManager::getOrLoadTexture("fire.png");
 
     if (pTexture == nullptr)
     {
@@ -52,8 +48,6 @@ bool Enemy::init()
 
 void Enemy::update(float dt)
 {
-    m_position.x -= m_speed * dt;
-    std::cout << "My hp is " << m_health << std::endl;
 }
 
 void Enemy::render(sf::RenderTarget& target) const

@@ -34,6 +34,7 @@ private:
     unsigned int m_score = 0;
     bool m_hasPauseKeyBeenReleased = true;
     float m_difficultyTimer = 0.0f;
+    float m_gameTime = 0.0f;
     unsigned int m_difficultyStage = 0; 
     unsigned int m_enemySpawnCount = EnemySpawnCount;
 

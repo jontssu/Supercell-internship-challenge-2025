@@ -27,10 +27,6 @@ void ParticleWorld::addParticle(const sf::Vector2f &position, sf::Vector2f veloc
 	}
 
 	particles[x][y] = Particle(mat_id, 5.f, velocity, sf::Color::White);
-	
-	// Verify it was set correctly
-	int storedId = particles[x][y].getId();
-	std::cout << "Added particle with mat_id=" << mat_id << ", verified stored id=" << storedId << " at grid[" << x << "][" << y << "]" << std::endl;
 }
 
 void ParticleWorld::updateSand(int x, int y)
@@ -40,9 +36,9 @@ void ParticleWorld::updateSand(int x, int y)
 		return;
 	sand.setHasBeenUpdated(true);
 
-	if (y + 1 < GRID_HEIGHT)
+	if (y + 1 < GRID_HEIGHT)  // Check downward
 	{
-		// Try to fall as far as velocity allows (default to 5 if velocity is 0)
+		// Try to fall as far as velocity allows
 		int maxFallDistance = static_cast<int>(sand.getVelocity().y);
 		if (maxFallDistance <= 0)
 			maxFallDistance = 1;
@@ -51,11 +47,10 @@ void ParticleWorld::updateSand(int x, int y)
 		for (int i = 1; i <= maxFallDistance && y + i < GRID_HEIGHT; ++i)
 		{
 			Particle& below = getParticleAt(x, y + i);
-			// Only fall through empty spaces, STOP at water or sand
 			if (below.getId() == MAT_ID_EMPTY)
 				fallDistance = i;
 			else
-				break;  // Hit an obstacle
+				break;
 		}
 
 		// If we can fall straight down, do it
@@ -72,21 +67,46 @@ void ParticleWorld::updateSand(int x, int y)
 			return;
 		}
 
-		// Can't fall straight, try diagonal
-		Particle& belowLeft = getParticleAt(x - 1, y + 1);
-		if (belowLeft.getId() == MAT_ID_EMPTY
-			|| belowLeft.getId() == MAT_ID_WATER)
+		// Can't fall straight, try diagonal downward
+		if (x - 1 >= 0)
 		{
-			std::swap(sand, belowLeft);
-			return;
+			Particle& belowLeft = getParticleAt(x - 1, y + 1);
+			if (belowLeft.getId() == MAT_ID_EMPTY
+				|| belowLeft.getId() == MAT_ID_WATER)
+			{
+				std::swap(sand, belowLeft);
+				return;
+			}
 		}
 
-		Particle& belowRight = getParticleAt(x + 1, y + 1);
-		if (belowRight.getId() == MAT_ID_EMPTY
-			|| belowRight.getId() == MAT_ID_WATER)
+		if (x + 1 < GRID_WIDTH)
 		{
-			std::swap(sand, belowRight);
-			return;
+			Particle& belowRight = getParticleAt(x + 1, y + 1);
+			if (belowRight.getId() == MAT_ID_EMPTY
+				|| belowRight.getId() == MAT_ID_WATER)
+			{
+				std::swap(sand, belowRight);
+				return;
+			}
+		}
+	}
+	
+	// Move left at the end if no other movement occurred (only when timer allows)
+	if (shouldMoveLeftThisFrame)
+	{
+		if (x > 0)
+		{
+			Particle& left = getParticleAt(x - 1, y);
+			if (left.getId() == MAT_ID_EMPTY)
+			{
+				std::swap(sand, left);
+				return;
+			}
+		}
+		else if (x == 0)
+		{
+			// Delete particle at left edge
+			sand.setId(MAT_ID_EMPTY);
 		}
 	}
 }
@@ -98,9 +118,9 @@ void ParticleWorld::updateWater(int x, int y)
 		return;
 	water.setHasBeenUpdated(true);
 
-	if (y + 1 < GRID_HEIGHT)
+	if (y + 1 < GRID_HEIGHT)  // Check downward
 	{	
-		// Try to fall as far as velocity allows (default to 5 if velocity is 0)
+		// Try to fall as far as velocity allows
 		int maxFallDistance = static_cast<int>(water.getVelocity().y);
 		if (maxFallDistance <= 0)
 			maxFallDistance = 1;
@@ -109,11 +129,10 @@ void ParticleWorld::updateWater(int x, int y)
 		for (int i = 1; i <= maxFallDistance && y + i < GRID_HEIGHT; ++i)
 		{
 			Particle& below = getParticleAt(x, y + i);
-			// Only fall through empty spaces, STOP at water or sand
 			if (below.getId() == MAT_ID_EMPTY)
 				fallDistance = i;
 			else
-				break;  // Hit an obstacle
+				break;
 		}
 
 		// If we can fall straight down, do it
@@ -240,6 +259,25 @@ void ParticleWorld::updateWater(int x, int y)
 			}
 		}
 	}
+	
+	// Move left at the end if no other movement occurred (only when timer allows)
+	if (shouldMoveLeftThisFrame)
+	{
+		if (x > 0)
+		{
+			Particle& left = getParticleAt(x - 1, y);
+			if (left.getId() == MAT_ID_EMPTY)
+			{
+				std::swap(water, left);
+				return;
+			}
+		}
+		else if (x == 0)
+		{
+			// Delete particle at left edge
+			water.setId(MAT_ID_EMPTY);
+		}
+	}
 }
 
 void ParticleWorld::updateWood(float dt, int x, int y)
@@ -301,17 +339,24 @@ void ParticleWorld::updateWood(float dt, int x, int y)
 		}
 	}
 	
-	// Move wood left
-	if (x - 1 >= 0)
-	{
-		Particle& left = getParticleAt(x - 1, y);
-		if (left.getId() == MAT_ID_EMPTY)
-		{
-			// Swap wood particle with empty space on the left
-			std::swap(particles[x][y], particles[x - 1][y]);
-			getParticleAt(x - 1, y).setHasBeenUpdated(true);
-		}
-	}
+	// if (shouldMoveLeftThisFrame)
+	// {
+	// 	if (x > 0)
+	// 	{
+	// 		Particle& left = getParticleAt(x - 1, y);
+	// 		if (left.getId() == MAT_ID_EMPTY)
+	// 		{
+	// 			// Swap wood particle with empty space on the left
+	// 			std::swap(particles[x][y], particles[x - 1][y]);
+	// 			getParticleAt(x - 1, y).setHasBeenUpdated(true);
+	// 		}
+	// 	}
+	// 	else if (x == 0)
+	// 	{
+	// 		// Delete particle at left edge
+	// 		wood.setId(MAT_ID_EMPTY);
+	// 	}
+	// }
 }
 
 void ParticleWorld::updateStone(int x, int y) 
@@ -426,6 +471,25 @@ void ParticleWorld::updateFire(float dt, int x, int y)
 		std::swap(fire, belowRight);
 		return;
 	}
+	
+	// Move left at the end if no other movement occurred (only when timer allows)
+	if (shouldMoveLeftThisFrame)
+	{
+		if (x > 0)
+		{
+			Particle& left = getParticleAt(x - 1, y);
+			if (left.getId() == MAT_ID_EMPTY)
+			{
+				std::swap(fire, left);
+				return;
+			}
+		}
+		else if (x == 0)
+		{
+			// Delete particle at left edge
+			fire.setId(MAT_ID_EMPTY);
+		}
+	}
 }
 
 void ParticleWorld::updateSmoke(float dt, int x, int y)
@@ -471,11 +535,26 @@ void ParticleWorld::updateSmoke(float dt, int x, int y)
 		std::swap(smoke, right);
 		return;
 	}
+	
+	// Delete smoke at left edge
+	if (x == 0)
+	{
+		smoke.setId(MAT_ID_EMPTY);
+	}
 }
 
 
 void ParticleWorld::update(float dt)
 {
+	// Update leftward movement timer
+	leftwardMoveTimer += dt;
+	shouldMoveLeftThisFrame = false;
+	if (leftwardMoveTimer >= leftwardMoveInterval)
+	{
+		leftwardMoveTimer = 0.0f;
+		shouldMoveLeftThisFrame = true;
+	}
+	
 	for (int y = 0; y < GRID_HEIGHT; ++y)
 	{
 		for (int x = 0; x < GRID_WIDTH; ++x)
@@ -496,6 +575,9 @@ void ParticleWorld::update(float dt)
 				switch (mat_id)
 				{
 					case MAT_ID_EMPTY:
+						break;
+					case MAT_ID_SAND:
+						updateSand(x, y);
 						break;
 					case MAT_ID_WATER:
 						updateWater(x, y);
@@ -527,6 +609,9 @@ void ParticleWorld::update(float dt)
 				switch (mat_id)
 				{
 					case MAT_ID_EMPTY:
+						break;
+					case MAT_ID_SAND:
+						updateSand(x, y);
 						break;
 					case MAT_ID_WATER:
 						updateWater(x, y);
@@ -564,6 +649,14 @@ void ParticleWorld::render(sf::RenderTarget &target)
 			{
 				case MAT_ID_EMPTY:
 					break;
+				case MAT_ID_SAND:
+				{
+					sf::RectangleShape rectangle(sf::Vector2f(1.f * ParticleScale, 1.f * ParticleScale));
+					rectangle.setPosition({static_cast<float>(x) * ParticleScale, static_cast<float>(y) * ParticleScale});
+					rectangle.setFillColor(sf::Color(194, 178, 128)); // Beige/tan sand color
+					target.draw(rectangle);
+					break;
+				}
 				case MAT_ID_WATER:
 				{
 					sf::RectangleShape rectangle(sf::Vector2f(1.f * ParticleScale, 1.f * ParticleScale));

@@ -2,7 +2,7 @@
 
 const unsigned int WindowWidth = 800;
 const unsigned int WindowHeight = 600;
-const unsigned int ParticleScale = 2.0f;
+const unsigned int ParticleScale = 4.0f;
 
 constexpr int GRID_WIDTH = WindowWidth / ParticleScale;
 constexpr int GRID_HEIGHT = WindowHeight / ParticleScale;

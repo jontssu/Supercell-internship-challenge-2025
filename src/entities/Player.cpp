@@ -13,6 +13,16 @@ Player::Player()
 {
 }
 
+void Player::initPhysics()
+{
+	velocityMax = 100.f;
+	velocityMin = 1.f;
+	acceleration = 100.f;
+	drag = 0.80f;
+	gravity = 25.f; // Increased gravity for better jump feel
+	velocityMaxY = 900.f; // Increased max Y velocity to allow much higher jumps
+}
+
 sf::Vector2f Player::getShootDirection() const
 {
     sf::Vector2f direction = m_mousePosition - m_position;
@@ -63,30 +73,199 @@ bool Player::init()
     m_pSprite->setScale(sf::Vector2f(3.0f, 3.0f));
     m_collisionRadius = collisionRadius;
 
+    // Initialize physics
+    initPhysics();
+
     return true;
+}
+
+void Player::updatePhysics(float dt)
+{
+	//Gravity
+	velocity.y += 1.0 * gravity;
+	if (std::abs(velocity.y) > velocityMaxY)
+		velocity.y = (velocity.y > 0) ? velocityMaxY : -velocityMaxY;
+
+	//Deceleration
+	velocity *= drag;
+
+	//Limit deceleration
+	if (std::abs(velocity.x) < velocityMin)
+		velocity.x = 0.f;
+	if (std::abs(velocity.y) < velocityMin)
+		velocity.y = 0.f;
+
+	if (std::abs(velocity.x) <= 1.f)
+		velocity.x = 0.f;
+	// sprite.move(velocity);
 }
 
 void Player::update(float dt)
 {
+    // Check for particle collisions if particle world is available
+    m_inWater = false;
+    m_groundLevel = GroundLevel;
+    bool standingOnGround = false;
+    bool touchingSandOrWater = false;
+    
+    if (m_pParticleWorldPtr)
+    {
+        // Check particles below and around the player
+        int playerGridX = static_cast<int>(m_position.x / ParticleScale);
+        int playerGridY = static_cast<int>(m_position.y / ParticleScale);
+        
+        // Check for sand/water below player to stand on
+        float highestSandY = GroundLevel;
+        bool standingOnSand = false;
+        
+        // Check a wider area below the player
+        int checkRadius = static_cast<int>(collisionRadius / ParticleScale);
+        for (int dx = -checkRadius; dx <= checkRadius; ++dx)
+        {
+            for (int dy = 0; dy <= checkRadius * 2; ++dy)
+            {
+                int gridX = playerGridX + dx;
+                int gridY = playerGridY + dy;
+                
+                if (gridX >= 0 && gridX < GRID_WIDTH && gridY >= 0 && gridY < GRID_HEIGHT)
+                {
+                    int matId = m_pParticleWorldPtr->getParticleAt(gridX, gridY).getId();
+                    
+                    // Check if player is in water
+                    if (matId == MAT_ID_WATER)
+                    {
+                        float particleWorldY = gridY * ParticleScale;
+                        if (particleWorldY >= m_position.y - collisionRadius && 
+                            particleWorldY <= m_position.y + collisionRadius)
+                        {
+                            m_inWater = true;
+                            touchingSandOrWater = true;
+                        }
+                    }
+                    
+                    // Check for sand to stand on
+                    if (matId == MAT_ID_SAND || matId == MAT_ID_WATER)
+                    {
+                        float particleWorldY = gridY * ParticleScale;
+                        float particleWorldX = gridX * ParticleScale;
+                        
+                        // Check if touching sand/water particles
+                        float dx_real = particleWorldX - m_position.x;
+                        float dy_real = particleWorldY - m_position.y;
+                        float distSq = dx_real * dx_real + dy_real * dy_real;
+                        
+                        if (distSq < collisionRadius * collisionRadius)
+                        {
+                            touchingSandOrWater = true;
+                        }
+                        
+                        // Check if particle is directly below player
+                        if (particleWorldY > m_position.y && 
+                            std::abs(particleWorldX - m_position.x) < collisionRadius)
+                        {
+                            if (particleWorldY < highestSandY)
+                            {
+                                highestSandY = particleWorldY;
+                                standingOnSand = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // If standing on sand, adjust ground level
+        if (standingOnSand)
+        {
+            m_groundLevel = highestSandY - 5.0f; // Offset so player stands on top
+        }
+    }
+    
+    // Particles push player left
+    if (touchingSandOrWater)
+    {
+        float basePushForce = 1.5f;
+        float pushIncreasePerTenSeconds = 0.2f;
+        float pushForce = basePushForce + (m_gameTime / 10.0f) * pushIncreasePerTenSeconds;
+        velocity.x -= pushForce;
+    }
+    
+    // Check if player is on the ground
+    standingOnGround = (m_position.y >= m_groundLevel - 1.0f);
+    
+    // Handle input for horizontal movement
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
+    {
+        // Move left
+        if (velocity.x > -velocityMax)
+            velocity.x -= acceleration * dt * 60.0f; // Scale by 60 for frame-rate independent
+    }
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
+    {
+        // Move right
+        if (velocity.x < velocityMax)
+            velocity.x += acceleration * dt * 60.0f; // Scale by 60 for frame-rate independent
+    }
+    
+    // Handle jumping
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space))
     {
-        if (m_position.y >= GroundLevel)
-            m_isJumping = true;
+        if (standingOnGround)
+        {
+            // Jump - apply upward velocity
+            float jumpForce = -600.0f; // 3x higher jump (negative because Y increases downward)
+            if (m_inWater)
+                jumpForce *= 0.6f; // Weaker jump in water
+            velocity.y = jumpForce;
+        }
     }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
+    
+    // Apply water effects to physics
+    float currentDrag = drag;
+    float currentGravity = gravity;
+    
+    if (m_inWater)
     {
-        if (m_position.y <= GroundLevel)
-            m_isJumping = false;
+        currentDrag = 0.92f; // More drag in water
+        currentGravity = gravity * 0.4f; // Less gravity in water (buoyancy)
+        
+        // Clamp vertical velocity in water
+        if (velocity.y > velocityMaxY * 0.5f)
+            velocity.y = velocityMaxY * 0.5f;
     }
+    
+    // Apply physics
+    velocity.y += 1.0f * currentGravity * dt * 60.0f; // Scale by 60 for frame-rate independent
+    if (std::abs(velocity.y) > velocityMaxY)
+        velocity.y = (velocity.y > 0) ? velocityMaxY : -velocityMaxY;
+    
+    // Apply drag (use pow for frame-rate independent drag)
+    float dragFactor = std::pow(currentDrag, dt * 60.0f);
+    velocity *= dragFactor;
+    
+    // Limit deceleration
+    if (std::abs(velocity.x) < velocityMin)
+        velocity.x = 0.f;
+    if (std::abs(velocity.y) < velocityMin)
+        velocity.y = 0.f;
+    
+    // Apply velocity to position
+    m_position += velocity * dt;
+    
+    // Ground collision
+    if (m_position.y > m_groundLevel)
+    {
+        m_position.y = m_groundLevel;
+        velocity.y = 0.f;
+    }
+    
+    // Screen bounds
+    if (m_position.x < 50.0f)
+        m_position.x = 50.0f;
+    if (m_position.x > WindowWidth - 50.0f)
+        m_position.x = WindowWidth - 50.0f;
 
-    if (m_position.y < GroundLevel - 300)
-        m_isJumping = false;
-
-    if (m_isJumping)
-        m_position.y -= 300 * dt;
-    else if (!m_isJumping && m_position.y < GroundLevel)
-        m_position.y += 300 * dt;
-
+    // Shooting
     if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
         shoot(dt, PROJECTILE_TYPE_WATER);
     else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Right))
