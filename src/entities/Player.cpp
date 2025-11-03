@@ -254,17 +254,15 @@ void Player::update(float dt)
         velocity.y = 0.f;
     }
     
-    // Screen bounds
-    if (m_position.x < 50.0f)
-        m_position.x = 50.0f;
-    if (m_position.x > WindowWidth - 50.0f)
-        m_position.x = WindowWidth - 50.0f;
+    // Screen bounds - allow being pushed left (death zone), but limit right side
+    if (m_position.x > WindowWidth - 100.0f)
+        m_position.x = WindowWidth - 100.0f;
 
     // Shooting
     if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
-        shoot(dt, PROJECTILE_TYPE_WATER);
-    else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Right))
         shoot(dt, PROJECTILE_TYPE_FIRE);
+    else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Right))
+        shoot(dt, PROJECTILE_TYPE_WATER);
 }
 
 void Player::render(sf::RenderTarget& target) const

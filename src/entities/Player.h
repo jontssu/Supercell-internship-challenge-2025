@@ -34,6 +34,7 @@ public:
 
     ProjectileRequest getProjectileRequest() const { return m_projectileRequest; }
     const float getDamage() const { return m_damage; }
+    bool isPushedOffEdge() const { return m_position.x < 0.0f; }
 
     bool hasProjectileRequest() const { return m_hasProjectileRequest; }
     void clearProjectileRequest() { m_hasProjectileRequest = false; }

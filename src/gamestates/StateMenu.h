@@ -15,9 +15,14 @@ public:
     void update(float dt) override;
     void render(sf::RenderTarget& target) const override;
 
+    static unsigned int loadHighScore();
+    static void saveHighScore(unsigned int score);
+
 public:
     StateStack& m_stateStack;
     std::unique_ptr<sf::Text> m_pText;
+    std::unique_ptr<sf::Text> m_pHighScoreText;
     bool m_hasStartKeyBeenPressed = false;
     bool m_hasStartKeyBeenReleased = false;
+    unsigned int m_highScore = 0;
 };

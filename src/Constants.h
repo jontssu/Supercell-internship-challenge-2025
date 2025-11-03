@@ -17,7 +17,7 @@ const float ProjectileSpeed = 600.0f; // Pixels per second
 const float EnemySpawnInterval = 3.0f;
 const float EnemySpeed = 150.0f;
 const int EnemyDamage = 10;
-const int EnemyHealth = 100;
-const int EnemySpawnCount = 1;
+const int EnemyHealth = 25;
+const int EnemySpawnCount = 2;
 
 const float BasePushForce = 7.5f;

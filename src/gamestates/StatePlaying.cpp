@@ -1,5 +1,6 @@
 #include "StatePlaying.h"
 #include "StatePaused.h"
+#include "StateMenu.h"
 #include "StateStack.h"
 #include "ResourceManager.h"
 #include <memory>
@@ -52,6 +53,7 @@ void StatePlaying::update(float dt)
     {
         m_difficultyTimer = 0.0f;
         enemySpawnInterval = std::max(0.1f, enemySpawnInterval - 0.1f);
+        m_woodSpawnInterval = std::max(0.5f, m_woodSpawnInterval - 0.1f); // Wood spawns faster too
         m_difficultyStage += 1;
         if (m_difficultyStage % 5 == 0)
             m_enemySpawnCount += 1;
@@ -147,6 +149,47 @@ void StatePlaying::update(float dt)
                     }
                 }
             }
+            // Handle water/ice projectile-wood particle collisions
+            else if (m_projectiles[i]->getProjectileType() == PROJECTILE_TYPE_WATER)
+            {
+                sf::Vector2f projPos = m_projectiles[i]->getPosition();
+                
+                int projGridX = static_cast<int>(projPos.x / ParticleScale);
+                int projGridY = static_cast<int>(projPos.y / ParticleScale);
+                
+                int checkRadius = 1;
+                for (int dx = -checkRadius; dx <= checkRadius && !projectileErased; ++dx)
+                {
+                    for (int dy = -checkRadius; dy <= checkRadius && !projectileErased; ++dy)
+                    {
+                        int gridX = projGridX + dx;
+                        int gridY = projGridY + dy;
+                        
+                        // Strict bounds checking
+                        if (gridX >= 0 && gridX < GRID_WIDTH && gridY >= 0 && gridY < GRID_HEIGHT)
+                        {
+                            Particle& particle = m_pParticleWorld->getParticleAt(gridX, gridY);
+                            if (particle.getId() == MAT_ID_WOOD)
+                            {
+                                float particleWorldX = (gridX * ParticleScale) + (ParticleScale / 2.0f);
+                                float particleWorldY = (gridY * ParticleScale) + (ParticleScale / 2.0f);
+                                float dx_real = projPos.x - particleWorldX;
+                                float dy_real = projPos.y - particleWorldY;
+                                float distSq = dx_real * dx_real + dy_real * dy_real;
+                                
+                                float maxDist = ParticleScale * 1.5f;
+                                if (distSq < maxDist * maxDist)
+                                {
+                                    particle.setId(MAT_ID_EMPTY);
+                                    
+                                    m_projectiles.erase(m_projectiles.begin() + i);
+                                    projectileErased = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -220,9 +263,16 @@ void StatePlaying::update(float dt)
         }
     }
 
+    // Check if player was pushed off the left edge
+    if (m_pPlayer && m_pPlayer->isPushedOffEdge())
+        playerDied = true;
+
     // End Playing State on player death
     if (playerDied)
+    {
+        StateMenu::saveHighScore(m_score);
         m_stateStack.popDeferred();
+    }
 
     // Particle spawner - alternates between material types
     static float particleSpawnTimer = 0.0f;
@@ -233,15 +283,12 @@ void StatePlaying::update(float dt)
     particleSpawnTimer += dt;
     materialSwitchTimer += dt;
     
-    // Switch material type after duration expires
     if (materialSwitchTimer >= materialSwitchDuration)
     {
         materialSwitchTimer = 0.0f;
         
-        // Toggle between SAND and WATER
         currentMaterialType = (currentMaterialType == MAT_ID_SAND) ? MAT_ID_WATER : MAT_ID_SAND;
         
-        // Sand periods last much longer than water periods
         if (currentMaterialType == MAT_ID_SAND)
         {
             // Sand: 2.0 to 4.0 seconds
@@ -269,11 +316,11 @@ void StatePlaying::update(float dt)
         }
     }
 
-    // Wood particle blob spawner - spawns random chunks across the screen
+    // Wood particle blob spawner
     static float woodSpawnTimer = 0.0f;
     woodSpawnTimer += dt;
     
-    if (m_pParticleWorld && woodSpawnTimer > 0.5f) // Spawn a blob every 0.5 seconds
+    if (m_pParticleWorld && woodSpawnTimer > m_woodSpawnInterval)
     {
         woodSpawnTimer = 0.0f;
         
@@ -282,8 +329,8 @@ void StatePlaying::update(float dt)
         float blobCenterY = margin + static_cast<float>(rand() % static_cast<int>(WindowHeight - 2 * margin));
         
         // Spawn a blob of wood particle and random radius
-        int blobSize = 45 + rand() % 46;
-        float blobRadius = static_cast<float>(rand() % 60);
+        int blobSize = 240 + rand() % 181; 
+        float blobRadius = 20.0f + static_cast<float>(rand() % 21);
         
         for (int i = 0; i < blobSize; ++i)
         {

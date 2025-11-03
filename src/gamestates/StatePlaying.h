@@ -23,6 +23,7 @@ public:
 private:
     float enemySpawnInterval = EnemySpawnInterval;
     float m_timeUntilEnemySpawn = enemySpawnInterval;
+    float m_woodSpawnInterval = 2.5f;
 
     StateStack& m_stateStack;
     std::unique_ptr<Player> m_pPlayer;
