@@ -18,6 +18,7 @@ public:
     struct ProjectileRequest {
         sf::Vector2f position;
         sf::Vector2f velocity;
+        int projectileType;  // Which type of projectile
     };
 
     Player();
@@ -25,10 +26,13 @@ public:
     
     void setParticleWorld(ParticleWorld* pParticleWorld) { m_pParticleWorld = std::make_unique<ParticleWorld>(*pParticleWorld); }
 
-    void shoot(float dt);
-    bool hasProjectileRequest() const { return m_hasProjectileRequest; }
     ProjectileRequest getProjectileRequest() const { return m_projectileRequest; }
+    const float getDamage() const { return m_damage; }
+
+    bool hasProjectileRequest() const { return m_hasProjectileRequest; }
     void clearProjectileRequest() { m_hasProjectileRequest = false; }
+
+    void shoot(float dt, int type);
 
     bool init() override;
     void update(float dt) override;
@@ -40,6 +44,7 @@ private:
     std::unique_ptr<ParticleWorld> m_pParticleWorld;
     float m_shootCooldown = 0.0f;
     float m_attackSpeed = AttackSpeed;
+    float m_damage = PlayerDamage;
     bool m_hasProjectileRequest = false;
     ProjectileRequest m_projectileRequest;
 

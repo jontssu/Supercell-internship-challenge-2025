@@ -3,16 +3,21 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <iostream>
 
-Projectile::Projectile(const sf::Vector2f& position, const sf::Vector2f& velocity)
+Projectile::Projectile(const sf::Vector2f& position, const sf::Vector2f& velocity, int projectileType)
 {
 	m_position = position;
 	m_velocity = velocity;
+
+	m_projectileType = projectileType;
 	
 	// Setup the rectangle
 	m_rectangle.setSize(sf::Vector2f(ProjectileWidth, ProjectileHeight));
-	m_rectangle.setFillColor(sf::Color::Yellow);
 	m_rectangle.setOrigin(sf::Vector2f(ProjectileWidth / 2.0f, ProjectileHeight / 2.0f)); // Center it
 	m_rectangle.setPosition(m_position);
+	if (m_projectileType == PROJECTILE_TYPE_WATER)
+		m_rectangle.setFillColor(sf::Color::Blue);
+	else if (m_projectileType == PROJECTILE_TYPE_FIRE)
+		m_rectangle.setFillColor(sf::Color::Red);
 }
 
 void Projectile::update(float dt)

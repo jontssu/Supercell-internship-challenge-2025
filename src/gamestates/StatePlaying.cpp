@@ -44,14 +44,7 @@ void StatePlaying::update(float dt)
         std::unique_ptr<Enemy> pEnemy = std::make_unique<Enemy>();
         pEnemy->setPosition(sf::Vector2f(WindowWidth - 20, GroundLevel));
         if (pEnemy->init())
-        {
             m_enemies.push_back(std::move(pEnemy));
-            std::cout << "Enemy spawned! Total enemies: " << m_enemies.size() << std::endl;
-        }
-        else
-        {
-            std::cout << "Enemy init failed!" << std::endl;
-        }
     }
 
     // Pause game
@@ -70,40 +63,57 @@ void StatePlaying::update(float dt)
     if (m_pPlayer && m_pPlayer->hasProjectileRequest())
     {
         auto request = m_pPlayer->getProjectileRequest();
-        std::cout << "Creating projectile at (" << request.position.x << ", " << request.position.y << ")" << std::endl;
-        m_projectiles.push_back(std::make_unique<Projectile>(request.position, request.velocity));
+        m_projectiles.push_back(std::make_unique<Projectile>(
+            request.position, 
+            request.velocity, 
+            request.projectileType
+        ));
         m_pPlayer->clearProjectileRequest();
-        std::cout << "Total projectiles: " << m_projectiles.size() << std::endl;
     }
 
     // Update projectiles
     for (auto& projectile : m_projectiles)
-    {
         projectile->update(dt);
-    }
 
     // Remove off-screen projectiles
-    m_projectiles.erase(
-        std::remove_if(m_projectiles.begin(), m_projectiles.end(),
-            [](const std::unique_ptr<Projectile>& p) { return p->isOffScreen(); }),
-        m_projectiles.end()
-    );
+    for (int i = m_projectiles.size() - 1; i >= 0; --i)
+    {
+        if (m_projectiles[i]->isOffScreen())
+            m_projectiles.erase(m_projectiles.begin() + i);
+    }
 
     if (m_pParticleWorld)
         m_pParticleWorld->update(dt);
 
     for (const std::unique_ptr<Enemy>& pEnemy : m_enemies)
-    {
         pEnemy->update(dt);
+
+    // Check for bullet-enemy collisions
+    for (int i = m_projectiles.size() - 1; i >= 0; --i)
+    {
+        for (int j = m_enemies.size() - 1; j >= 0; --j)
+        {
+            float distance = (m_projectiles[i]->getPosition() - m_enemies[j]->getPosition()).lengthSquared();
+            float minDistance = std::pow(ProjectileWidth / 2.0f + m_enemies[j]->getCollisionRadius(), 2.0f);
+
+            if (distance <= minDistance)
+            {
+                // Damage the enemy if type matches
+                if (m_enemies[j]->setHealth(m_pPlayer->getDamage(), m_projectiles[i]->getProjectileType()))
+                    m_enemies.erase(m_enemies.begin() + j);
+                
+                m_projectiles.erase(m_projectiles.begin() + i);
+                break;
+            }
+        }
     }
 
-    // Detect collisions
+    // Check for player-enemy collisions
     bool playerDied = false;
     for (const std::unique_ptr<Enemy>& pEnemy : m_enemies)
     {
         float distance = (m_pPlayer->getPosition() - pEnemy->getPosition()).lengthSquared();
         float minDistance = std::pow(Player::collisionRadius + pEnemy->getCollisionRadius(), 2.0f);
-        // const sf::Vector2f playerPosition = m_pPlayer->getPosition();
 
         if (distance <= minDistance)
         {

@@ -6,19 +6,28 @@
 
 namespace sf { class RenderTarget; }
 
+enum ProjectileType
+{
+	PROJECTILE_TYPE_WATER,
+	PROJECTILE_TYPE_FIRE
+};
+
 class Projectile
 {
 public:
-    Projectile(const sf::Vector2f& position, const sf::Vector2f& velocity);
+    Projectile(const sf::Vector2f& position, const sf::Vector2f& velocity, int projectileType);
     
+    inline const sf::Vector2f& getPosition() const { return m_position; }
+	inline const int getProjectileType() const { return m_projectileType; } 
+    bool isOffScreen() const;
+
     void update(float dt);
     void render(sf::RenderTarget& target) const;
     
-    const sf::Vector2f& getPosition() const { return m_position; }
-    bool isOffScreen() const;
     
 private:
 	sf::RectangleShape m_rectangle;
     sf::Vector2f m_position;
     sf::Vector2f m_velocity;
+	int m_projectileType;
 };

@@ -2,16 +2,32 @@
 #include "ResourceManager.h"
 #include <cmath>
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 
 bool Enemy::init()
 {
-    std::cout << "Enemy::init() called" << std::endl;
-    const sf::Texture* pTexture = ResourceManager::getOrLoadTexture("enemy.png");
+    int enemyType = rand() % 3;
+    if (enemyType == 0)
+        m_type = ENEMY_TYPE_WATER;
+    else if (enemyType == 1)
+        m_type = ENEMY_TYPE_FIRE;
+    else
+        m_type = ENEMY_TYPE_FROSTFIRE;
+
+    const sf::Texture* pTexture = nullptr;
+    if (m_type == ENEMY_TYPE_WATER)
+        pTexture = ResourceManager::getOrLoadTexture("enemy.png");
+    else if (m_type == ENEMY_TYPE_FIRE)
+        pTexture = ResourceManager::getOrLoadTexture("some_red_thing.png");
+    else
+        pTexture = ResourceManager::getOrLoadTexture("some_yellow_thing.png");
+
     if (pTexture == nullptr)
     {
-        std::cout << "ERROR: Failed to load enemy.png texture!" << std::endl;
+        std::cout << "ERROR: Failed to load enemy texture!" << std::endl;
         return false;
     }
 
@@ -28,13 +44,13 @@ bool Enemy::init()
     m_pSprite->setScale(sf::Vector2f(2.5f, 2.5f));
     m_collisionRadius = collisionRadius;
 
-    std::cout << "Enemy initialized at position (" << m_position.x << ", " << m_position.y << ")" << std::endl;
     return true;
 }
 
 void Enemy::update(float dt)
 {
     m_position.x -= 200 * dt;
+    std::cout << "My hp is " << m_health << std::endl;
 }
 
 void Enemy::render(sf::RenderTarget& target) const

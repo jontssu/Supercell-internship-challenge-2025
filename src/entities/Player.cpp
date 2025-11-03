@@ -6,6 +6,7 @@
 #include <cmath>
 #include <iostream>
 #include "Constants.h"
+#include "Projectile.h"
 
 Player::Player()
 {
@@ -17,7 +18,7 @@ sf::Vector2f Player::getShootDirection() const
     return sf::Vector2f(1.0f, 0.0f);
 }
 
-void Player::shoot(float dt)
+void Player::shoot(float dt, int type)
 {
     if (m_shootCooldown > 0.0f)
         m_shootCooldown -= dt;
@@ -29,10 +30,8 @@ void Player::shoot(float dt)
         
         m_projectileRequest.position = m_position;
         m_projectileRequest.velocity = direction * projectileSpeed;
+        m_projectileRequest.projectileType = type;  // Set the type!
         m_hasProjectileRequest = true;
-        
-        std::cout << "SHOOT! Position: (" << m_position.x << ", " << m_position.y 
-                  << ") Direction: (" << direction.x << ", " << direction.y << ")" << std::endl;
         
         m_shootCooldown = m_attackSpeed;
     }
@@ -60,22 +59,38 @@ bool Player::init()
 
 void Player::update(float dt)
 {
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space))
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
     {
-        if (m_position.y >= GroundLevel)
-        m_isJumping = true;
+        m_position.y -= 150 * dt;
     }
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
+    {
+        m_position.y += 150 * dt;
+    }
+    // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space))
+    // {
+    //     if (m_position.y >= GroundLevel)
+    //     m_isJumping = true;
+    // }
+    // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
+    // {
+    //     m_isJumping = false;
+    //     if (m_position.y < GroundLevel)
+    //     m_position.y += 1.0f;
+    // }
 
-    if (m_position.y < GroundLevel - 100)
-        m_isJumping = false;
+    // if (m_position.y < GroundLevel - 100)
+    //     m_isJumping = false;
 
-    if (m_isJumping)
-        m_position.y -= 200 * dt;
-    else if (!m_isJumping && m_position.y < GroundLevel)
-        m_position.y += 200 * dt;
+    // if (m_isJumping)
+    //     m_position.y -= 200 * dt;
+    // else if (!m_isJumping && m_position.y < GroundLevel)
+    //     m_position.y += 200 * dt;
 
     if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
-        shoot(dt);
+        shoot(dt, PROJECTILE_TYPE_WATER);
+    else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Right))
+        shoot(dt, PROJECTILE_TYPE_FIRE);
 }
 
 void Player::render(sf::RenderTarget& target) const
