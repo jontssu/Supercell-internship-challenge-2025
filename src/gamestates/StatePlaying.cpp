@@ -96,6 +96,60 @@ void StatePlaying::update(float dt)
             m_projectiles.erase(m_projectiles.begin() + i);
     }
 
+    // Handle fire projectile-wood particle collisions
+    if (m_pParticleWorld)
+    {
+        for (int i = m_projectiles.size() - 1; i >= 0; --i)
+        {
+            bool projectileErased = false;
+            
+            if (m_projectiles[i]->getProjectileType() == PROJECTILE_TYPE_FIRE)
+            {
+                sf::Vector2f projPos = m_projectiles[i]->getPosition();
+                
+                int projGridX = static_cast<int>(projPos.x / ParticleScale);
+                int projGridY = static_cast<int>(projPos.y / ParticleScale);
+                
+                int checkRadius = 1;
+                for (int dx = -checkRadius; dx <= checkRadius && !projectileErased; ++dx)
+                {
+                    for (int dy = -checkRadius; dy <= checkRadius && !projectileErased; ++dy)
+                    {
+                        int gridX = projGridX + dx;
+                        int gridY = projGridY + dy;
+                        
+                        // Strict bounds checking
+                        if (gridX >= 0 && gridX < GRID_WIDTH && gridY >= 0 && gridY < GRID_HEIGHT)
+                        {
+                            Particle& particle = m_pParticleWorld->getParticleAt(gridX, gridY);
+                            if (particle.getId() == MAT_ID_WOOD)
+                            {
+                                // Calculate actual distance between projectile center and particle center
+                                float particleWorldX = (gridX * ParticleScale) + (ParticleScale / 2.0f);
+                                float particleWorldY = (gridY * ParticleScale) + (ParticleScale / 2.0f);
+                                float dx_real = projPos.x - particleWorldX;
+                                float dy_real = projPos.y - particleWorldY;
+                                float distSq = dx_real * dx_real + dy_real * dy_real;
+                                
+                                // Projectile is 2x2, particle is 4x4, collision if centers are close
+                                // Use ParticleScale as the collision distance (one particle width)
+                                float maxDist = ParticleScale * 1.5f; // 6 pixels with ParticleScale=4
+                                if (distSq < maxDist * maxDist)
+                                {
+                                    particle.setIsOnFire(true);
+                                    
+                                    // Remove the projectile
+                                    m_projectiles.erase(m_projectiles.begin() + i);
+                                    projectileErased = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     if (m_pParticleWorld)
         m_pParticleWorld->update(dt);
 
@@ -118,6 +172,14 @@ void StatePlaying::update(float dt)
                 pEnemy->setSpeed(EnemySpeed);
                 m_enemies.push_back(std::move(pEnemy));
             }
+        }
+    }
+
+    for (int i = m_enemies.size() - 1; i >= 0; --i)
+    {
+        if (m_enemies[i]->isExpired())
+        {
+            m_enemies.erase(m_enemies.begin() + i);
         }
     }
 
@@ -204,6 +266,43 @@ void StatePlaying::update(float dt)
             sf::Vector2f velocity(0.0f, 0.0f);
             
             m_pParticleWorld->addParticle(spawnPosition, velocity, currentMaterialType);
+        }
+    }
+
+    // Wood particle blob spawner - spawns random chunks across the screen
+    static float woodSpawnTimer = 0.0f;
+    woodSpawnTimer += dt;
+    
+    if (m_pParticleWorld && woodSpawnTimer > 0.5f) // Spawn a blob every 0.5 seconds
+    {
+        woodSpawnTimer = 0.0f;
+        
+        float margin = 75.0f;
+        float blobCenterX = margin + static_cast<float>(rand() % static_cast<int>(WindowWidth - 2 * margin));
+        float blobCenterY = margin + static_cast<float>(rand() % static_cast<int>(WindowHeight - 2 * margin));
+        
+        // Spawn a blob of wood particle and random radius
+        int blobSize = 45 + rand() % 46;
+        float blobRadius = static_cast<float>(rand() % 60);
+        
+        for (int i = 0; i < blobSize; ++i)
+        {
+            // Random position within the blob radius
+            float angle = static_cast<float>(rand() % 360) * 3.14159f / 180.0f;
+            float distance = static_cast<float>(rand() % static_cast<int>(blobRadius));
+            
+            sf::Vector2f offset(
+                std::cos(angle) * distance,
+                std::sin(angle) * distance
+            );
+            
+            sf::Vector2f spawnPosition(blobCenterX + offset.x, blobCenterY + offset.y);
+            
+            // Clamp individual particles to safe area (at least 20 pixels from edges)
+            float finalX = std::max(margin, std::min(spawnPosition.x, WindowWidth - margin));
+            float finalY = std::max(margin, std::min(spawnPosition.y, WindowHeight - margin));
+            
+            m_pParticleWorld->addParticle(sf::Vector2f(finalX, finalY), sf::Vector2f(0.0f, 0.0f), MAT_ID_WOOD);
         }
     }
 

@@ -48,6 +48,7 @@ bool Enemy::init()
 
 void Enemy::update(float dt)
 {
+    m_lifetime += dt;
 }
 
 void Enemy::render(sf::RenderTarget& target) const

@@ -174,20 +174,10 @@ void Player::update(float dt)
             }
         }
         
-        // If standing on sand, adjust ground level
         if (standingOnSand)
         {
-            m_groundLevel = highestSandY - 5.0f; // Offset so player stands on top
+            m_groundLevel = highestSandY - 5.0f; 
         }
-    }
-    
-    // Particles push player left
-    if (touchingSandOrWater)
-    {
-        float basePushForce = 1.5f;
-        float pushIncreasePerTenSeconds = 0.2f;
-        float pushForce = basePushForce + (m_gameTime / 10.0f) * pushIncreasePerTenSeconds;
-        velocity.x -= pushForce;
     }
     
     // Check if player is on the ground
@@ -196,24 +186,29 @@ void Player::update(float dt)
     // Handle input for horizontal movement
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
     {
-        // Move left
         if (velocity.x > -velocityMax)
-            velocity.x -= acceleration * dt * 60.0f; // Scale by 60 for frame-rate independent
+            velocity.x -= acceleration * dt * 60.0f;
     }
     else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
     {
-        // Move right
         if (velocity.x < velocityMax)
-            velocity.x += acceleration * dt * 60.0f; // Scale by 60 for frame-rate independent
+            velocity.x += acceleration * dt * 60.0f; 
     }
     
-    // Handle jumping
+    if (touchingSandOrWater)
+    {
+        float basePushForce = BasePushForce;
+        float pushIncreasePerTenSeconds = 0.2f;
+        float pushForce = basePushForce + (m_gameTime / 10.0f) * pushIncreasePerTenSeconds;
+        velocity.x -= pushForce;
+    }
+    
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space))
     {
         if (standingOnGround)
         {
             // Jump - apply upward velocity
-            float jumpForce = -600.0f; // 3x higher jump (negative because Y increases downward)
+            float jumpForce = -600.0f; 
             if (m_inWater)
                 jumpForce *= 0.6f; // Weaker jump in water
             velocity.y = jumpForce;
@@ -226,8 +221,8 @@ void Player::update(float dt)
     
     if (m_inWater)
     {
-        currentDrag = 0.92f; // More drag in water
-        currentGravity = gravity * 0.4f; // Less gravity in water (buoyancy)
+        currentDrag = 0.92f;
+        currentGravity = gravity * 0.4f; 
         
         // Clamp vertical velocity in water
         if (velocity.y > velocityMaxY * 0.5f)
@@ -239,7 +234,7 @@ void Player::update(float dt)
     if (std::abs(velocity.y) > velocityMaxY)
         velocity.y = (velocity.y > 0) ? velocityMaxY : -velocityMaxY;
     
-    // Apply drag (use pow for frame-rate independent drag)
+    // Apply drag 
     float dragFactor = std::pow(currentDrag, dt * 60.0f);
     velocity *= dragFactor;
     

@@ -30,6 +30,7 @@ public:
     inline const int getDamage() const { return m_damage; }
     inline const int getType() const { return m_type; }
     inline const bool isDead() const { return m_health <= 0; }
+    inline const bool isExpired() const { return m_lifetime >= 5.0f; }
 
     Enemy() = default;
     virtual ~Enemy() = default;
@@ -43,4 +44,5 @@ private:
     int m_health = EnemyHealth;
     int m_damage = EnemyDamage;
     float m_speed = EnemySpeed;
+    float m_lifetime = 0.0f;
 };

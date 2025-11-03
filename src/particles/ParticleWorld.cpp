@@ -287,76 +287,53 @@ void ParticleWorld::updateWood(float dt, int x, int y)
 		return;
 	wood.setHasBeenUpdated(true);
 
-
 	if (wood.getIsOnFire())
 	{
-		if (y - 1 >= 0)
-		{
-			Particle& above = getParticleAt(x, y - 1);
-			if (above.getId() == MAT_ID_EMPTY && rand() % 5 == 0)
-				above.setId(MAT_ID_SMOKE);
-		}
+		// Check if wood has burned completely
 		if (wood.burn(dt))
 		{
 			wood.setId(MAT_ID_FIRE);
 			wood.setLifetime(MAT_FIRE_LIFETIME);
+			wood.setIsOnFire(false);
+			return;
 		}
-		if (y + 1 < GRID_HEIGHT && rand() % 4 == 0)
+		
+		// Fire spreading - just set the fire flag, don't change material type
+		if (rand() % 8 == 0 && y + 1 >= 0 && y + 1 < GRID_HEIGHT)
 		{
 			Particle& below = getParticleAt(x, y + 1);
-			if (below.getId() == MAT_ID_WOOD)
+			if (below.getId() == MAT_ID_WOOD && !below.getIsOnFire())
 			{
-				below.setId(MAT_ID_WOODFIRE);
 				below.setIsOnFire(true);
 			}
 		}
-		if (x - 1 >= 0 && rand() % 4 == 0)
+		if (rand() % 8 == 0 && x - 1 >= 0 && x - 1 < GRID_WIDTH)
 		{
 			Particle& left = getParticleAt(x - 1, y);
-			if (left.getId() == MAT_ID_WOOD)
+			if (left.getId() == MAT_ID_WOOD && !left.getIsOnFire())
 			{
-				left.setId(MAT_ID_WOODFIRE);
 				left.setIsOnFire(true);
 			}
 		}
-		if (x + 1 < GRID_WIDTH && rand() % 4 == 0)
+		if (rand() % 8 == 0 && x + 1 >= 0 && x + 1 < GRID_WIDTH)
 		{
 			Particle& right = getParticleAt(x + 1, y);
-			if (right.getId() == MAT_ID_WOOD)
+			if (right.getId() == MAT_ID_WOOD && !right.getIsOnFire())
 			{
-				right.setId(MAT_ID_WOODFIRE);
 				right.setIsOnFire(true);
 			}
 		}
-		if (y - 1 >= 0 && rand() % 4 == 0)
+		if (rand() % 8 == 0 && y - 1 >= 0 && y - 1 < GRID_HEIGHT)
 		{
 			Particle& above = getParticleAt(x, y - 1);
-			if (above.getId() == MAT_ID_WOOD)
+			if (above.getId() == MAT_ID_WOOD && !above.getIsOnFire())
 			{
-				above.setId(MAT_ID_WOODFIRE);
 				above.setIsOnFire(true);
 			}
 		}
+		
+		return;
 	}
-	
-	// if (shouldMoveLeftThisFrame)
-	// {
-	// 	if (x > 0)
-	// 	{
-	// 		Particle& left = getParticleAt(x - 1, y);
-	// 		if (left.getId() == MAT_ID_EMPTY)
-	// 		{
-	// 			// Swap wood particle with empty space on the left
-	// 			std::swap(particles[x][y], particles[x - 1][y]);
-	// 			getParticleAt(x - 1, y).setHasBeenUpdated(true);
-	// 		}
-	// 	}
-	// 	else if (x == 0)
-	// 	{
-	// 		// Delete particle at left edge
-	// 		wood.setId(MAT_ID_EMPTY);
-	// 	}
-	// }
 }
 
 void ParticleWorld::updateStone(int x, int y) 
@@ -381,9 +358,9 @@ void ParticleWorld::updateFire(float dt, int x, int y)
 		return;
 	}
 
-	Particle& below = getParticleAt(x, y + 1);
 	if (y + 1 < GRID_HEIGHT)
 	{
+		Particle& below = getParticleAt(x, y + 1);
 		int id = below.getId();
 		if (id == MAT_ID_WATER)
 		{
@@ -392,8 +369,6 @@ void ParticleWorld::updateFire(float dt, int x, int y)
 		}
 		if (id == MAT_ID_WOOD || id == MAT_ID_OIL)
 		{
-			if (id == MAT_ID_WOOD)
-				below.setId(MAT_ID_WOODFIRE);
 			below.setIsOnFire(true);
 			hasSpread = true;
 		}
@@ -409,8 +384,6 @@ void ParticleWorld::updateFire(float dt, int x, int y)
 		}
 		if (id == MAT_ID_WOOD || id == MAT_ID_OIL)
 		{
-			if (id == MAT_ID_WOOD)
-				left.setId(MAT_ID_WOODFIRE);
 			left.setIsOnFire(true);
 			hasSpread = true;
 		}
@@ -426,8 +399,6 @@ void ParticleWorld::updateFire(float dt, int x, int y)
 		}
 		if (id == MAT_ID_WOOD || id == MAT_ID_OIL)
 		{
-			if (id == MAT_ID_WOOD)
-				right.setId(MAT_ID_WOODFIRE);
 			right.setIsOnFire(true);
 			hasSpread = true;
 		}
@@ -443,8 +414,7 @@ void ParticleWorld::updateFire(float dt, int x, int y)
 		}
 		if (id == MAT_ID_WOOD || id == MAT_ID_OIL)
 		{
-			if (id == MAT_ID_WOOD)
-				above.setId(MAT_ID_WOODFIRE);
+			// Just set the fire flag, don't change material type
 			above.setIsOnFire(true);
 			hasSpread = true;
 		}
@@ -454,22 +424,36 @@ void ParticleWorld::updateFire(float dt, int x, int y)
 		fire.setId(MAT_ID_EMPTY);
 		return;
 	}
-	if (below.getId() == MAT_ID_EMPTY)
+	
+	// Try to fall down
+	if (y + 1 < GRID_HEIGHT)
 	{
-		std::swap(fire, below);
-		return;	
+		Particle& below = getParticleAt(x, y + 1);
+		if (below.getId() == MAT_ID_EMPTY)
+		{
+			std::swap(particles[x][y], particles[x][y + 1]);
+			return;	
+		}
 	}
-	Particle& belowLeft = getParticleAt(x - 1, y + 1);
-	if (belowLeft.getId() == MAT_ID_EMPTY)
+	
+	// Try diagonal fall
+	if (y + 1 < GRID_HEIGHT && x - 1 >= 0)
 	{
-		std::swap(fire, belowLeft);
-		return;
+		Particle& belowLeft = getParticleAt(x - 1, y + 1);
+		if (belowLeft.getId() == MAT_ID_EMPTY)
+		{
+			std::swap(particles[x][y], particles[x - 1][y + 1]);
+			return;
+		}
 	}
-	Particle& belowRight = getParticleAt(x + 1, y + 1);
-	if (belowRight.getId() == MAT_ID_EMPTY)
+	if (y + 1 < GRID_HEIGHT && x + 1 < GRID_WIDTH)
 	{
-		std::swap(fire, belowRight);
-		return;
+		Particle& belowRight = getParticleAt(x + 1, y + 1);
+		if (belowRight.getId() == MAT_ID_EMPTY)
+		{
+			std::swap(particles[x][y], particles[x + 1][y + 1]);
+			return;
+		}
 	}
 	
 	// Move left at the end if no other movement occurred (only when timer allows)
@@ -480,13 +464,12 @@ void ParticleWorld::updateFire(float dt, int x, int y)
 			Particle& left = getParticleAt(x - 1, y);
 			if (left.getId() == MAT_ID_EMPTY)
 			{
-				std::swap(fire, left);
+				std::swap(particles[x][y], particles[x - 1][y]);
 				return;
 			}
 		}
 		else if (x == 0)
 		{
-			// Delete particle at left edge
 			fire.setId(MAT_ID_EMPTY);
 		}
 	}
@@ -668,15 +651,30 @@ void ParticleWorld::render(sf::RenderTarget &target)
 				case MAT_ID_WOOD:
 				{
 					sf::RectangleShape rectangle(sf::Vector2f(1.f * ParticleScale, 1.f * ParticleScale));
-					rectangle.setPosition({static_cast<float>(x), static_cast<float>(y)});
-					rectangle.setFillColor(sf::Color(70, 50, 30)); // Dark Brown color
+					rectangle.setPosition({static_cast<float>(x) * ParticleScale, static_cast<float>(y) * ParticleScale});
+					
+					// Check if this wood particle is on fire
+					Particle& p = getParticleAt(x, y);
+					if (p.getIsOnFire())
+					{
+						// Render as burning wood with fire colors
+						if (rand() % 2 == 0)
+							rectangle.setFillColor(sf::Color::Yellow);
+						else
+							rectangle.setFillColor(sf::Color::Red);
+					}
+					else
+					{
+						rectangle.setFillColor(sf::Color(70, 50, 30)); // Dark Brown color
+					}
+					
 					target.draw(rectangle);
 					break;
 				}
 				case MAT_ID_FIRE:
 				{
 					sf::RectangleShape rectangle(sf::Vector2f(1.f * ParticleScale, 1.f * ParticleScale));
-					rectangle.setPosition({static_cast<float>(x), static_cast<float>(y)});
+					rectangle.setPosition({static_cast<float>(x) * ParticleScale, static_cast<float>(y) * ParticleScale});
 					if (rand() % 2 == 0)
 						rectangle.setFillColor(sf::Color::Yellow); // Yellow color
 					else
@@ -687,7 +685,7 @@ void ParticleWorld::render(sf::RenderTarget &target)
 				case MAT_ID_WOODFIRE:
 				{
 					sf::RectangleShape rectangle(sf::Vector2f(1.f * ParticleScale, 1.f * ParticleScale));
-					rectangle.setPosition({static_cast<float>(x), static_cast<float>(y)});
+					rectangle.setPosition({static_cast<float>(x) * ParticleScale, static_cast<float>(y) * ParticleScale});
 					if (rand() % 2 == 0)
 						rectangle.setFillColor(sf::Color::Yellow); // Yellow color
 					else
@@ -698,7 +696,7 @@ void ParticleWorld::render(sf::RenderTarget &target)
 				case MAT_ID_SMOKE:
 				{
 					sf::RectangleShape rectangle(sf::Vector2f(1.f * ParticleScale, 1.f * ParticleScale));
-					rectangle.setPosition({static_cast<float>(x), static_cast<float>(y)});
+					rectangle.setPosition({static_cast<float>(x) * ParticleScale, static_cast<float>(y) * ParticleScale});
 					rectangle.setFillColor(sf::Color(0, 0, 0)); // Black color
 					target.draw(rectangle);
 					break;
