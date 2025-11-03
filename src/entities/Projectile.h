@@ -8,8 +8,8 @@ namespace sf { class RenderTarget; }
 
 enum ProjectileType
 {
-	PROJECTILE_TYPE_WATER,
-	PROJECTILE_TYPE_FIRE
+	PROJECTILE_TYPE_FIRE = 0,
+	PROJECTILE_TYPE_WATER = 1
 };
 
 class Projectile

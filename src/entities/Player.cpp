@@ -72,29 +72,18 @@ void Player::update(float dt)
     {
         m_position.y -= 150 * dt;
     }
-    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
     {
         m_position.y += 150 * dt;
     }
-    // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space))
-    // {
-    //     if (m_position.y >= GroundLevel)
-    //     m_isJumping = true;
-    // }
-    // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
-    // {
-    //     m_isJumping = false;
-    //     if (m_position.y < GroundLevel)
-    //     m_position.y += 1.0f;
-    // }
-
-    // if (m_position.y < GroundLevel - 100)
-    //     m_isJumping = false;
-
-    // if (m_isJumping)
-    //     m_position.y -= 200 * dt;
-    // else if (!m_isJumping && m_position.y < GroundLevel)
-    //     m_position.y += 200 * dt;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
+    {
+        m_position.x -= 150 * dt;
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
+    {
+        m_position.x += 150 * dt;
+    }
 
     if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
         shoot(dt, PROJECTILE_TYPE_WATER);

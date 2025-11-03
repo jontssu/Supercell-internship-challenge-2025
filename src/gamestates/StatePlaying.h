@@ -21,7 +21,7 @@ public:
 	void render(sf::RenderTarget &target) const override;
 
 private:
-    static constexpr const float enemySpawnInterval = 2.0f;
+    float enemySpawnInterval = EnemySpawnInterval;
     float m_timeUntilEnemySpawn = enemySpawnInterval;
 
     StateStack& m_stateStack;
@@ -33,6 +33,9 @@ private:
     const sf::Font* m_font = nullptr;
     unsigned int m_score = 0;
     bool m_hasPauseKeyBeenReleased = true;
+    float m_difficultyTimer = 0.0f;
+    unsigned int m_difficultyStage = 0; 
+    unsigned int m_enemySpawnCount = EnemySpawnCount;
 
     void updateCollisions();
 };

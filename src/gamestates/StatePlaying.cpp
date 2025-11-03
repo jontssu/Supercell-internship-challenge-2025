@@ -39,18 +39,33 @@ bool StatePlaying::init()
 
 void StatePlaying::update(float dt)
 {
+    // Difficulty scaling
+    m_difficultyTimer += dt;
+    if (m_difficultyTimer >= 10.0f)
+    {
+        m_difficultyTimer = 0.0f;
+        enemySpawnInterval = std::max(0.1f, enemySpawnInterval - 0.1f);
+        m_difficultyStage += 1;
+        if (m_difficultyStage % 5 == 0)
+            m_enemySpawnCount += 1;
+    }
+
     // Enemy spawning
     m_timeUntilEnemySpawn -= dt;
-
     if (m_timeUntilEnemySpawn < 0.0f)
     {
         m_timeUntilEnemySpawn = enemySpawnInterval;
-        std::unique_ptr<Enemy> pEnemy = std::make_unique<Enemy>();
-        pEnemy->setPosition(sf::Vector2f(WindowWidth - 20, GroundLevel));
-        if (pEnemy->init())
-            m_enemies.push_back(std::move(pEnemy));
+        for (unsigned int i = 0; i < m_enemySpawnCount; ++i)
+        {
+            float randomY = (float)rand() / RAND_MAX * WindowHeight;
+            std::unique_ptr<Enemy> pEnemy = std::make_unique<Enemy>();
+            pEnemy->setPosition(sf::Vector2f(WindowWidth - 20, randomY));
+            if (pEnemy->init())
+                m_enemies.push_back(std::move(pEnemy));
+        }
         m_score += 5.0f;
     }
+
 
     // Pause game
     bool isPauseKeyPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape);
