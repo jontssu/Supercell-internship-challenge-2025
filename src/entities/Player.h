@@ -48,6 +48,7 @@ private:
     bool m_hasProjectileRequest = false;
     ProjectileRequest m_projectileRequest;
     mutable sf::Vector2f m_mousePosition;
+    sf::Vector2f m_velocity = {0.0f, 0.0f};
 
     sf::Vector2f getShootDirection() const;
 };

@@ -249,6 +249,7 @@ void ParticleWorld::updateWood(float dt, int x, int y)
 		return;
 	wood.setHasBeenUpdated(true);
 
+
 	if (wood.getIsOnFire())
 	{
 		if (y - 1 >= 0)
@@ -297,6 +298,18 @@ void ParticleWorld::updateWood(float dt, int x, int y)
 				above.setId(MAT_ID_WOODFIRE);
 				above.setIsOnFire(true);
 			}
+		}
+	}
+	
+	// Move wood left
+	if (x - 1 >= 0)
+	{
+		Particle& left = getParticleAt(x - 1, y);
+		if (left.getId() == MAT_ID_EMPTY)
+		{
+			// Swap wood particle with empty space on the left
+			std::swap(particles[x][y], particles[x - 1][y]);
+			getParticleAt(x - 1, y).setHasBeenUpdated(true);
 		}
 	}
 }
@@ -484,20 +497,11 @@ void ParticleWorld::update(float dt)
 				{
 					case MAT_ID_EMPTY:
 						break;
-					case MAT_ID_SAND:
-						updateSand(x, y);
-						break;
 					case MAT_ID_WATER:
 						updateWater(x, y);
 						break;
 					case MAT_ID_WOOD:
 						updateWood(dt, x, y);
-						break;
-					case MAT_ID_STONE:
-						updateStone(x, y);
-						break;
-					case MAT_ID_OIL:
-						updateOil(x, y);
 						break;
 					case MAT_ID_FIRE:
 						updateFire(dt, x, y);
@@ -524,20 +528,11 @@ void ParticleWorld::update(float dt)
 				{
 					case MAT_ID_EMPTY:
 						break;
-					case MAT_ID_SAND:
-						updateSand(x, y);
-						break;
 					case MAT_ID_WATER:
 						updateWater(x, y);
 						break;
 					case MAT_ID_WOOD:
 						updateWood(dt, x, y);
-						break;
-					case MAT_ID_STONE:
-						updateStone(x, y);
-						break;
-					case MAT_ID_OIL:
-						updateOil(x, y);
 						break;
 					case MAT_ID_FIRE:
 						updateFire(dt, x, y);
@@ -546,8 +541,12 @@ void ParticleWorld::update(float dt)
 						updateWood(dt, x, y);
 						break;
 					case MAT_ID_SMOKE:
+					{
+						if (rand() % 4 == 0)
+							break;
 						updateSmoke(dt, x, y);
 						break;
+					}
 				}
 			}
 		}
@@ -565,14 +564,6 @@ void ParticleWorld::render(sf::RenderTarget &target)
 			{
 				case MAT_ID_EMPTY:
 					break;
-				case MAT_ID_SAND:
-				{
-					sf::RectangleShape rectangle(sf::Vector2f(1.f * ParticleScale, 1.f * ParticleScale));
-					rectangle.setPosition({static_cast<float>(x) * ParticleScale, static_cast<float>(y) * ParticleScale});
-					rectangle.setFillColor(sf::Color::Yellow);
-					target.draw(rectangle);
-					break;
-				}
 				case MAT_ID_WATER:
 				{
 					sf::RectangleShape rectangle(sf::Vector2f(1.f * ParticleScale, 1.f * ParticleScale));
@@ -586,22 +577,6 @@ void ParticleWorld::render(sf::RenderTarget &target)
 					sf::RectangleShape rectangle(sf::Vector2f(1.f * ParticleScale, 1.f * ParticleScale));
 					rectangle.setPosition({static_cast<float>(x), static_cast<float>(y)});
 					rectangle.setFillColor(sf::Color(70, 50, 30)); // Dark Brown color
-					target.draw(rectangle);
-					break;
-				}
-				case MAT_ID_STONE:
-				{
-					sf::RectangleShape rectangle(sf::Vector2f(1.f * ParticleScale, 1.f * ParticleScale));
-					rectangle.setPosition({static_cast<float>(x), static_cast<float>(y)});
-					rectangle.setFillColor(sf::Color(128, 128, 128)); // Gray color
-					target.draw(rectangle);
-					break;
-				}
-				case MAT_ID_OIL:
-				{
-					sf::RectangleShape rectangle(sf::Vector2f(1.f * ParticleScale, 1.f * ParticleScale));
-					rectangle.setPosition({static_cast<float>(x), static_cast<float>(y)});
-					rectangle.setFillColor(sf::Color(0, 0, 0)); // Black color
 					target.draw(rectangle);
 					break;
 				}

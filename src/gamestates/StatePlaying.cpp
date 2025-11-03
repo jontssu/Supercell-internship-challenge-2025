@@ -57,7 +57,11 @@ void StatePlaying::update(float dt)
         m_timeUntilEnemySpawn = enemySpawnInterval;
         for (unsigned int i = 0; i < m_enemySpawnCount; ++i)
         {
-            float randomY = (float)rand() / RAND_MAX * WindowHeight;
+            // Spawn enemies within player's movement range
+            float minY = 426.0f;
+            float maxY = 576.0f;
+            float randomY = minY + ((float)rand() / RAND_MAX) * (maxY - minY);
+            
             std::unique_ptr<Enemy> pEnemy = std::make_unique<Enemy>();
             pEnemy->setPosition(sf::Vector2f(WindowWidth - 20, randomY));
             if (pEnemy->init())
