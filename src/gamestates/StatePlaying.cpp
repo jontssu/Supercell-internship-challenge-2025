@@ -29,7 +29,11 @@ bool StatePlaying::init()
     m_pPlayer->setPosition(sf::Vector2f(200, GroundLevel));
     m_pPlayer->setParticleWorld(m_pParticleWorld.get());
 
+    m_font = ResourceManager::getOrLoadFont("Lavigne.ttf");
+    if (!m_font)
+        return false;
 
+    m_score = 0;
     return true;
 }
 
@@ -45,6 +49,7 @@ void StatePlaying::update(float dt)
         pEnemy->setPosition(sf::Vector2f(WindowWidth - 20, GroundLevel));
         if (pEnemy->init())
             m_enemies.push_back(std::move(pEnemy));
+        m_score += 5.0f;
     }
 
     // Pause game
@@ -100,7 +105,10 @@ void StatePlaying::update(float dt)
             {
                 // Damage the enemy if type matches
                 if (m_enemies[j]->setHealth(m_pPlayer->getDamage(), m_projectiles[i]->getProjectileType()))
+                {
                     m_enemies.erase(m_enemies.begin() + j);
+                    m_score += 10.0f;
+                }
                 
                 m_projectiles.erase(m_projectiles.begin() + i);
                 break;
@@ -127,6 +135,18 @@ void StatePlaying::update(float dt)
         m_stateStack.popDeferred();
 }
 
+void StatePlaying::renderScore(sf::RenderTarget& target) const
+{
+    if (!m_font)
+        return;
+    
+    sf::Text scoreText(*m_font);
+    scoreText.setString("Score: " + std::to_string(m_score));
+    scoreText.setFillColor(sf::Color::White);
+    scoreText.setPosition({10.f, 10.f});
+    target.draw(scoreText);
+}
+
 void StatePlaying::render(sf::RenderTarget& target) const
 {
     // target.draw(m_ground);
@@ -142,4 +162,6 @@ void StatePlaying::render(sf::RenderTarget& target) const
     
     if (m_pParticleWorld)
         m_pParticleWorld->render(target);
+
+    renderScore(target);
 }

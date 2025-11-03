@@ -47,6 +47,7 @@ private:
     float m_damage = PlayerDamage;
     bool m_hasProjectileRequest = false;
     ProjectileRequest m_projectileRequest;
+    mutable sf::Vector2f m_mousePosition;
 
     sf::Vector2f getShootDirection() const;
 };

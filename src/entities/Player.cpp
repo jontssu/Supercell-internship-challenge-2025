@@ -3,6 +3,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Window/Mouse.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
 #include <cmath>
 #include <iostream>
 #include "Constants.h"
@@ -14,8 +15,16 @@ Player::Player()
 
 sf::Vector2f Player::getShootDirection() const
 {
-    // Shoot to the right
-    return sf::Vector2f(1.0f, 0.0f);
+    sf::Vector2f direction = m_mousePosition - m_position;
+    float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
+    
+    // Normalize the direction
+    if (length > 0.0f)
+        direction /= length;
+    else
+        direction = sf::Vector2f(1.0f, 0.0f); // Default to right if mouse is on player
+    
+    return direction;
 }
 
 void Player::shoot(float dt, int type)
@@ -26,7 +35,7 @@ void Player::shoot(float dt, int type)
     if (m_shootCooldown <= 0.0f)
     {
         sf::Vector2f direction = getShootDirection();
-        float projectileSpeed = 600.0f; // Pixels per second
+        float projectileSpeed = ProjectileSpeed; // Pixels per second
         
         m_projectileRequest.position = m_position;
         m_projectileRequest.velocity = direction * projectileSpeed;
@@ -95,6 +104,9 @@ void Player::update(float dt)
 
 void Player::render(sf::RenderTarget& target) const
 {
+    if (const sf::RenderWindow* window = dynamic_cast<const sf::RenderWindow*>(&target))
+        m_mousePosition = window->mapPixelToCoords(sf::Mouse::getPosition(*window));
+    
     m_pSprite->setRotation(m_rotation);
     m_pSprite->setPosition(m_position);
     target.draw(*m_pSprite);

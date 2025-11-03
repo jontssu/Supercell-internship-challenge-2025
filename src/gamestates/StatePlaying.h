@@ -17,7 +17,8 @@ public:
 
     bool init() override;
     void update(float dt) override;
-    void render(sf::RenderTarget& target) const override;
+	void renderScore(sf::RenderTarget &target) const;
+	void render(sf::RenderTarget &target) const override;
 
 private:
     static constexpr const float enemySpawnInterval = 2.0f;
@@ -29,6 +30,8 @@ private:
     std::vector<std::unique_ptr<Enemy>> m_enemies;
     std::vector<std::unique_ptr<Projectile>> m_projectiles;
     sf::RectangleShape m_ground;
+    const sf::Font* m_font = nullptr;
+    unsigned int m_score = 0;
     bool m_hasPauseKeyBeenReleased = true;
 
     void updateCollisions();

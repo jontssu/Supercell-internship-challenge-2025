@@ -12,10 +12,10 @@ bool Enemy::init()
     int enemyType = rand() % 3;
     if (enemyType == 0)
         m_type = ENEMY_TYPE_WATER;
-    else if (enemyType == 1)
-        m_type = ENEMY_TYPE_FIRE;
-    else
-        m_type = ENEMY_TYPE_FROSTFIRE;
+    // else if (enemyType == 1)
+    //     m_type = ENEMY_TYPE_FIRE;
+    // else
+    //     m_type = ENEMY_TYPE_FROSTFIRE;
 
     const sf::Texture* pTexture = nullptr;
     if (m_type == ENEMY_TYPE_WATER)
