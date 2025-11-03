@@ -26,7 +26,7 @@ target_link_libraries(runner PRIVATE sfml-graphics sfml-audio sfml-network)
 target_compile_features(runner PRIVATE cxx_std_17)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    # target_compile_options(runner PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(runner PRIVATE -Wall -Wextra -Wpedantic)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(runner PRIVATE /W4)
 endif()

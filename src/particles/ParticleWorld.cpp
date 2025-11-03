@@ -336,14 +336,6 @@ void ParticleWorld::updateWood(float dt, int x, int y)
 	}
 }
 
-void ParticleWorld::updateStone(int x, int y) 
-{
-}
-
-void ParticleWorld::updateOil(int x, int y)
-{
-}
-
 void ParticleWorld::updateFire(float dt, int x, int y)
 {
 	Particle& fire = getParticleAt(x, y);
@@ -475,57 +467,6 @@ void ParticleWorld::updateFire(float dt, int x, int y)
 	}
 }
 
-void ParticleWorld::updateSmoke(float dt, int x, int y)
-{
-	Particle& smoke = getParticleAt(x, y);
-	if (smoke.HasBeenUpdated())
-		return;
-	smoke.setHasBeenUpdated(true);
-
-	if (smoke.burn(dt))
-	{
-		smoke.setId(MAT_ID_EMPTY);
-		smoke.setLifetime(10.f);
-	}
-
-	Particle& above = getParticleAt(x, y - 1);
-	if (above.getId() == MAT_ID_EMPTY)
-	{
-		std::swap(smoke, above);
-		return;	
-	}
-	Particle& aboveLeft = getParticleAt(x - 1, y - 1);
-	if (aboveLeft.getId() == MAT_ID_EMPTY)
-	{
-		std::swap(smoke, aboveLeft);
-		return;
-	}
-	Particle& aboveRight = getParticleAt(x + 1, y - 1);
-	if (aboveRight.getId() == MAT_ID_EMPTY)
-	{
-		std::swap(smoke, aboveRight);
-		return;
-	}
-	Particle& left = getParticleAt(x - 1, y);
-	if (left.getId() == MAT_ID_EMPTY)
-	{
-		std::swap(smoke, left);
-		return;
-	}	
-	Particle& right = getParticleAt(x + 1, y);
-	if (right.getId() == MAT_ID_EMPTY)
-	{
-		std::swap(smoke, right);
-		return;
-	}
-	
-	// Delete smoke at left edge
-	if (x == 0)
-	{
-		smoke.setId(MAT_ID_EMPTY);
-	}
-}
-
 
 void ParticleWorld::update(float dt)
 {
@@ -574,14 +515,8 @@ void ParticleWorld::update(float dt)
 					case MAT_ID_WOODFIRE:
 						updateWood(dt, x, y);
 						break;
-					case MAT_ID_SMOKE:
-					{
-						if (rand() % 4 == 0)
-							break;
-						updateSmoke(dt, x, y);
-						break;
-					}
-				}
+					default:
+						break;}
 			}
 		}
 		else
@@ -608,13 +543,8 @@ void ParticleWorld::update(float dt)
 					case MAT_ID_WOODFIRE:
 						updateWood(dt, x, y);
 						break;
-					case MAT_ID_SMOKE:
-					{
-						if (rand() % 4 == 0)
-							break;
-						updateSmoke(dt, x, y);
+					default:
 						break;
-					}
 				}
 			}
 		}
@@ -690,14 +620,6 @@ void ParticleWorld::render(sf::RenderTarget &target)
 						rectangle.setFillColor(sf::Color::Yellow); // Yellow color
 					else
 						rectangle.setFillColor(sf::Color::Red); // Red color
-					target.draw(rectangle);
-					break;
-				}
-				case MAT_ID_SMOKE:
-				{
-					sf::RectangleShape rectangle(sf::Vector2f(1.f * ParticleScale, 1.f * ParticleScale));
-					rectangle.setPosition({static_cast<float>(x) * ParticleScale, static_cast<float>(y) * ParticleScale});
-					rectangle.setFillColor(sf::Color(0, 0, 0)); // Black color
 					target.draw(rectangle);
 					break;
 				}

@@ -37,8 +37,6 @@ int main(int argc, char* argv[])
             if (event->is<sf::Event::Closed>())
                 window.close();;
         }
-        // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape))
-        //     window.close();
 
         pState->update(elapsedTime.asSeconds());
         window.clear();
